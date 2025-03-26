@@ -95,10 +95,27 @@
     document.getElementById("name").addEventListener("input", checkSubmit);
 
     function submitBet() {
-      const name = document.getElementById("name").value;
+  const name = document.getElementById("name").value;
+  const data = {
+    name: name,
+    pick: pick,
+  };
+
+  fetch("https://script.google.com/macros/s/AKfycbyA_YYyUKWJQ4JOY2TS3GAJJ3_YeUTaLjNcl5W2DFROVmWCAWWTy2Dv148JqBS9GOQd6w/exec", {
+    method: "POST",
+    body: JSON.stringify(data),
+    headers: {
+      "Content-Type": "application/json",
+    },
+  })
+    .then(() => {
       alert(`Bet submitted!\nName: ${name}\nPick: ${pick}`);
-      // Later: Send data to backend or Google Sheet
-    }
+    })
+    .catch((err) => {
+      alert("Submission failed. Try again.");
+      console.error(err);
+    });
+}
   </script>
 </body>
 </html>
