@@ -21,7 +21,7 @@ def bet():
         name = data["name"]
         pick = data["pick"]
         now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-        line = "+3:40"  # optional: later we can pull this dynamically
+        line = "+3:40"  # You can update this to be dynamic if needed
         sheet.append_row([name, pick, now, line])
         return jsonify({"status": "success"})
     except Exception as e:
@@ -40,10 +40,9 @@ def get_line():
             print("No records found.")
             return jsonify({"line": "N/A"})
 
-        # Make sure the key exists
         lateness_list = []
         for row in records:
-            value = row.get("Minutes Late")
+            value = row.get("Decimal Minutes Late")  # <-- Fixed here
             if value:
                 try:
                     lateness_list.append(float(value))
@@ -51,7 +50,7 @@ def get_line():
                     print(f"Skipping non-numeric value: {value}")
 
         if not lateness_list:
-            print("No valid 'Minutes Late' values found.")
+            print("No valid 'Decimal Minutes Late' values found.")
             return jsonify({"line": "N/A"})
 
         mean = sum(lateness_list) / len(lateness_list)
