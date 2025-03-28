@@ -61,7 +61,7 @@
 <body>
   <div class="card">
     <h2>Will Sergio Be On Time?</h2>
-    <p style="text-align:center">Next Class Line: <strong>+3:40 minutes</strong></p>
+    <p style="text-align:center">Next Class Line: <strong id="line">Loading...</strong></p>
 
     <div class="input-group">
       <label for="name">Your Name</label>
@@ -79,6 +79,17 @@
   <script>
     let pick = "";
 
+    // Fetch the current betting line
+    fetch("https://sergio-betting.onrender.com/line")
+      .then(res => res.json())
+      .then(data => {
+        document.getElementById("line").textContent = "+" + data.line;
+      })
+      .catch(err => {
+        console.error("Failed to fetch line:", err);
+        document.getElementById("line").textContent = "Unavailable";
+      });
+
     function selectPick(choice) {
       pick = choice;
       document.getElementById("over").style.backgroundColor = pick === "Over" ? "#ddd" : "";
@@ -95,29 +106,25 @@
     document.getElementById("name").addEventListener("input", checkSubmit);
 
     function submitBet() {
-  const name = document.getElementById("name").value;
-  const data = {
-    name: name,
-    pick: pick,
-  };
+      const name = document.getElementById("name").value;
+      const data = { name, pick };
 
-  fetch("https://sergio-betting.onrender.com/bet", {
-    method: "POST",
-    body: JSON.stringify(data),
-    headers: {
-      "Content-Type": "application/json"
+      fetch("https://sergio-betting.onrender.com/bet", {
+        method: "POST",
+        body: JSON.stringify(data),
+        headers: {
+          "Content-Type": "application/json"
+        }
+      })
+      .then(res => res.json())
+      .then(response => {
+        alert("Bet submitted!");
+      })
+      .catch(error => {
+        alert("Submission failed.");
+        console.error(error);
+      });
     }
-  })
-  .then(res => res.json())
-  .then(response => {
-    alert("Bet submitted!");
-  })
-  .catch(error => {
-    alert("Submission failed.");
-    console.error(error);
-  });
-}
-
   </script>
 </body>
 </html>
