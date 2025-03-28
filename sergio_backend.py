@@ -12,6 +12,7 @@ scope = ["https://spreadsheets.google.com/feeds", "https://www.googleapis.com/au
 creds = ServiceAccountCredentials.from_json_keyfile_name("credentials.json", scope)
 client = gspread.authorize(creds)
 
+# Route to submit a bet
 @app.route("/bet", methods=["POST"])
 def bet():
     try:
@@ -20,20 +21,39 @@ def bet():
         name = data["name"]
         pick = data["pick"]
         now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-        line = "+3:40"
+        line = "+3:40"  # optional: later we can pull this dynamically
         sheet.append_row([name, pick, now, line])
         return jsonify({"status": "success"})
     except Exception as e:
-        print(e)
+        print("Error in /bet:", e)
         return jsonify({"status": "error", "message": str(e)}), 500
 
-# NEW ROUTE
+# Route to get the current betting line
 @app.route("/line", methods=["GET"])
 def get_line():
     try:
         sheet = client.open("Sergio on time?").sheet1
         records = sheet.get_all_records()
-        lateness_list = [float(r["Minutes Late"]) for r in records if r["Minutes Late"] != ""]
+        print("Fetched records:", records)
+
+        if not records:
+            print("No records found.")
+            return jsonify({"line": "N/A"})
+
+        # Make sure the key exists
+        lateness_list = []
+        for row in records:
+            value = row.get("Minutes Late")
+            if value:
+                try:
+                    lateness_list.append(float(value))
+                except ValueError:
+                    print(f"Skipping non-numeric value: {value}")
+
+        if not lateness_list:
+            print("No valid 'Minutes Late' values found.")
+            return jsonify({"line": "N/A"})
+
         mean = sum(lateness_list) / len(lateness_list)
         std_dev = (sum([(x - mean)**2 for x in lateness_list]) / len(lateness_list))**0.5
         next_line = mean + 0.1 * std_dev
@@ -42,9 +62,10 @@ def get_line():
         seconds = int((next_line - minutes) * 60)
         line_str = f"{minutes}:{seconds:02d}"
 
+        print("Calculated betting line:", line_str)
         return jsonify({"line": line_str})
     except Exception as e:
-        print(e)
+        print("Error in /line:", e)
         return jsonify({"status": "error", "message": str(e)}), 500
 
 # Run the Flask app
