@@ -21,7 +21,7 @@ def bet():
         name = data["name"]
         pick = data["pick"]
         now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-        line = "+3:40"  # You can update this to be dynamic if needed
+        line = "+3:40"  # You can update this to be dynamic later
         sheet.append_row([name, pick, now, line])
         return jsonify({"status": "success"})
     except Exception as e:
@@ -34,34 +34,22 @@ def get_line():
     try:
         sheet = client.open("Sergio on time?").sheet1
         records = sheet.get_all_records()
-        print("Fetched records:", records)
 
         if not records:
-            print("No records found.")
             return jsonify({"line": "N/A"})
 
-        lateness_list = []
-        for row in records:
-            value = row.get("Decimal Minutes Late")  # <-- Fixed here
-            if value:
-                try:
-                    lateness_list.append(float(value))
-                except ValueError:
-                    print(f"Skipping non-numeric value: {value}")
+        # Get the most recent "Current Line (Auto)" value
+        last_row = records[-1]
+        current_line = last_row.get("Current Line (Auto)")
 
-        if not lateness_list:
-            print("No valid 'Decimal Minutes Late' values found.")
+        if current_line is None or current_line == "":
             return jsonify({"line": "N/A"})
 
-        mean = sum(lateness_list) / len(lateness_list)
-        std_dev = (sum([(x - mean)**2 for x in lateness_list]) / len(lateness_list))**0.5
-        next_line = mean + 0.1 * std_dev
-
-        minutes = int(next_line)
-        seconds = int((next_line - minutes) * 60)
+        # Convert decimal minutes to MM:SS format
+        minutes = int(current_line)
+        seconds = int(round((current_line - minutes) * 60))
         line_str = f"{minutes}:{seconds:02d}"
 
-        print("Calculated betting line:", line_str)
         return jsonify({"line": line_str})
     except Exception as e:
         print("Error in /line:", e)
